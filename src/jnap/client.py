@@ -32,15 +32,21 @@ class JNAPClient:
         self,
         host: str,
         session: aiohttp.ClientSession,
-        password: str,
+        password: str | None = None,
         *,
         username: str = _DEFAULT_USERNAME,
     ) -> None:
-        """Initialise the client."""
+        """Initialise the client.
+
+        If no password is given, requests are sent without authorization,
+        for routers that do not require it.
+        """
         self._url = f"http://{host}{self._JNAP_PATH}"
         self._session = session
-        credentials = b64encode(f"{username}:{password}".encode()).decode()
-        self._auth_header = f"Basic {credentials}"
+        self._auth_header: str | None = None
+        if password is not None:
+            credentials = b64encode(f"{username}:{password}".encode()).decode()
+            self._auth_header = f"Basic {credentials}"
 
     async def get_device_info(self) -> GetDeviceInfoResponse:
         """Return information about the router."""
@@ -64,13 +70,13 @@ class JNAPClient:
 
     async def _transaction(self, actions: list[JNAPRequest]) -> list[dict]:
         """POST a JNAP transaction and return the responses list."""
+        headers = {self._JNAP_HEADER: JNAPAction.TRANSACTION}
+        if self._auth_header is not None:
+            headers[self._JNAP_AUTH_HEADER] = self._auth_header
         try:
             async with self._session.post(
                 self._url,
-                headers={
-                    self._JNAP_HEADER: JNAPAction.TRANSACTION,
-                    self._JNAP_AUTH_HEADER: self._auth_header,
-                },
+                headers=headers,
                 json=[asdict(a) for a in actions],
                 timeout=self.DEFAULT_TIMEOUT,
             ) as response:

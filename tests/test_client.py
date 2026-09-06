@@ -275,6 +275,18 @@ async def test_invalid_input_raises_error(
         await client.get_devices()
 
 
+async def test_no_password_omits_auth_header(
+    mocked: aioresponses,
+    session: aiohttp.ClientSession,
+) -> None:
+    """Test that no Authorization header is sent when no password is given."""
+    unauthenticated_client = JNAPClient(HOST, session)
+    mocked.post(JNAP_URL, payload=_make_response([]))
+    await unauthenticated_client.get_devices()
+    call = mocked.requests[("POST", yarl.URL(JNAP_URL))][0]
+    assert "X-JNAP-Authorization" not in call.kwargs["headers"]
+
+
 async def test_custom_username(
     mocked: aioresponses,
     session: aiohttp.ClientSession,
