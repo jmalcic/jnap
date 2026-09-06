@@ -31,9 +31,9 @@ asyncio.run(main())
 
 ## API
 
-### `JNAPClient(host, session, password, *, username="admin")`
+### `JNAPClient(host, session, password=None, *, username="admin")`
 
-The main client class. Accepts an existing `aiohttp.ClientSession` so you can manage connection pooling and lifecycle yourself.
+The main client class. Accepts an existing `aiohttp.ClientSession` so you can manage connection pooling and lifecycle yourself. If `password` is omitted, requests are sent without authorization, for routers that don't require it.
 
 #### Methods
 
